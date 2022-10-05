@@ -18,7 +18,7 @@ class Bully:
         self.master_ip_addr = None
         self.color = 'GRAY'
         self.mtx = Lock()
-        self.color_counter = 0
+        self.color_counter = 1
         self.nodes = {}
         self.master_health_check = None
 
@@ -45,6 +45,12 @@ class Bully:
         self.color_counter = (self.color_counter + 1) % 3
         self.mtx.release()
         return color
+
+    
+    def reset_color_counter(self):
+        self.mtx.acquire()
+        self.color_counter = 1 # the master is always green
+        self.mtx.release()
 
 
     def delete_all_nodes(self):
@@ -90,7 +96,7 @@ class Bully:
         logging.info(f"Color has been changed to '{self.color}'")
 
     
-    def discover_other_nodes(self, max_nodes, skip_itself=False):
+    def discover_other_nodes(self, max_nodes, skip_itself=True):
         logging.info('Scanning the network...')
         
         count = 0
@@ -104,7 +110,7 @@ class Bully:
 
             api = f'http://{ip_addr}:5000/node-details'
             try:
-                response = requests.get(api, verify=False, timeout=0.5)
+                response = requests.get(api, verify=False, timeout=0.5, json=self.get_info())
 
                 if response.status_code == 200:
                     logging.info(f"'{api}' is UP")
@@ -164,6 +170,8 @@ class Bully:
 
     def announce_new_master(self):
         logging.info('I AM THE MASTER')
+        self.reset_color_counter()
+        self.set_election(False)
         pass
 
     
@@ -185,7 +193,6 @@ class Bully:
 
         exists_higher_node_id = False
         nodes_to_del = []
-        ongoing_election = False
 
         # Check if the election is possible
         # filter out higher node_ids
@@ -194,11 +201,7 @@ class Bully:
                 try:
                     response = requests(f'http://{ip_addr}:500/election')
                     if response.status == 200:
-                        status = response.json()['status']
-                        if status == 'False':
-                            exists_higher_node_id = True
-                        else:
-                            ongoing_election = True
+                        exists_higher_node_id = True
                 except:
                     nodes_to_del.append(ip_addr)
 
@@ -207,7 +210,7 @@ class Bully:
 
         # This is the new master
         if exists_higher_node_id == False:
-            delete_all_nodes() # they're supposed to register again (does it matter tho?)
+            #self.delete_all_nodes() # they're supposed to register again (does it matter tho?)
             self.announce_new_master()
         else:
             # Wait till timeout or till a new master is announced

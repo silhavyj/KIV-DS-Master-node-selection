@@ -16,13 +16,13 @@ Thread(target=bully.discover_other_nodes, args=(18,)).start()
 
 @app.route('/health-check', methods=['GET'])
 def is_alive():
-    data = request.get_json()
-    bully.add_node(data['ip_addr'], data)
     return jsonify({'Response': 'OK'}), 200
     
 
 @app.route('/node-details', methods=['GET'])
 def get_details():
+    data = request.get_json()
+    bully.add_node(data['ip_addr'], data)
     return jsonify(bully.get_info()), 200
 
 
@@ -66,6 +66,10 @@ def worker_register():
 
 @app.route('/election', methods=['GET'])
 def get_election():
+    if bully.election == False:
+        bully.election = True
+        Thread(bully.run_bully_algorithm).start()
+
     return jsonify({
         'response' : 'OK',
         'status'   : bully.election 
