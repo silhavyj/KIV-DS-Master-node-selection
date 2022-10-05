@@ -16,9 +16,8 @@ APP_IMAGE  = "ds/task01/silhavyj/app:0.1"
 NODES = {
     :name_prefix => "node-",
     :subnet => "10.0.1.",
-    :ip_offset => 100,
-    :image => APP_IMAGE,
-    :port => 43333
+    :ip_offset => 0,
+    :image => APP_IMAGE
 }
 
 NODES_COUNT = 2
