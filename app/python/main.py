@@ -1,5 +1,5 @@
 import logging
-import threading
+from threading import Thread, Lock
 from flask import Flask, request, jsonify
 
 from bully import Bully
@@ -8,12 +8,11 @@ app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
-# bully = Bully('docker0')
+bully = Bully('enp0s25')
+bully_mtx = Lock()
 
-bully = Bully('eth1')
-
-thread = threading.Thread(target=bully.discover_other_nodes, args=(5,))
-thread.start()
+network_scan = Thread(target=bully.discover_other_nodes, args=(5,))
+network_scan.start()
 
 @app.route('/node-details', methods=['GET'])
 def get_details():
@@ -28,7 +27,15 @@ def get_details():
 
 @app.route('/color', methods=['POST'])
 def set_color():
-    pass
+    data = request.get_json()
+    if 'color' in data:
+        bully_mtx.acquire()
+        bully.color = data['color']
+        bully_mtx.release()
+        logging.info(f"color has been changed to '{bully.color}'")
+        return jsonify({'Response': 'OK'}), 200
+    else:
+        return jsonify({'Response': 'ERROR'}), 400
 
 
 @app.route('/register', methods=['POST'])

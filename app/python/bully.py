@@ -12,7 +12,9 @@ class Bully:
         self.node_id = generate_node_id()
         self.election = False
         self.master = False
+        self.color = 'GRAY'
 
+        self.nodes = {}
     
     def discover_other_nodes(self, max_nodes):
         logging.info('Scanning the network...')
@@ -29,7 +31,7 @@ class Bully:
 
                 if response.status_code == 200:
                     logging.info(f"'{api}' is UP")
-                    
+
                 else:
                     logging.error(f'{api} seems to be up but status code 200 was not received')
             except:
