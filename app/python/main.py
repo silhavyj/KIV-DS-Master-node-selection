@@ -61,9 +61,12 @@ def worker_register():
     }), 200
 
 
-@app.route('/master_announcement', methods=['POST'])
-def register_new_node():
-    pass
+@app.route('/election', methods=['GET'])
+def get_election():
+    return jsonify({
+        'response' : 'OK',
+        'status'   : bully.election 
+    }), 200
 
 
 if __name__ == '__main__':

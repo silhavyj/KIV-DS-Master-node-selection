@@ -44,6 +44,18 @@ class Bully:
         self.mtx.release()
         return color
 
+
+    def set_election(self, value):
+        self.mtx.acquire()
+        self.election = value
+        self.mtx.release()
+
+
+    def remove_node(self, ip_addr):
+        self.mtx.acquire()
+        self.nodes.pop(ip_addr)
+        self.mtx.release()
+
     
     def add_node(self, ip_addr, data):
         self.mtx.acquire()
@@ -138,4 +150,24 @@ class Bully:
             time.sleep(2) # sleep for 2 secs
 
         logging.error(f'Master {self.master_ip_addr} seems to be down')
-        # TODO start the election algorithm
+        self.run_bully_algorithm()
+
+    
+    def run_bully_algorithm(self):
+        # Set the flag (ongoing algorithm)
+        self.set_election(True)
+
+        # remove the master form the list of active nodes
+        self.remove_node(self.master_ip_addr)
+
+        # Check if the election is possible
+        # filter out higher node_ids
+        for ip_addr in self.nodes:
+            if self.node_id < self.nodes[ip_addr]['node_id']:
+                try:
+                    response = requests(f'http://{ip_addr}:500/election')
+                    if response.status == 200:
+                        pass
+                except:
+                    # TODO remove the node as it's dead as well
+                    pass
