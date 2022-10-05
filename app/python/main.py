@@ -26,5 +26,15 @@ def get_details():
     })
 
 
+@app.route('/color', methods=['POST'])
+def set_color():
+    pass
+
+
+@app.route('/register', methods=['POST'])
+def register_new_node():
+    pass
+
+
 if __name__ == '__main__':
     app.run(host=str(bully.network_info.interface.ip))

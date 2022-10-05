@@ -16,7 +16,7 @@ APP_IMAGE  = "ds/task01/silhavyj/app:0.1"
 NODES = {
     :name_prefix => "node-",
     :subnet => "10.0.1.",
-    :ip_offset => 0,
+    :ip_offset => 1,
     :image => APP_IMAGE
 }
 

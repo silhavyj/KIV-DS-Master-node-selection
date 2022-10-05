@@ -26,10 +26,12 @@ class Bully:
             api = f'http://{ip_addr}:5000/node-details'
             try:
                 response = requests.get(api, verify=False, timeout=0.5)
-                logging.info(response.status_code)
 
                 if response.status_code == 200:
                     logging.info(f"'{api}' is UP")
+                    
+                else:
+                    logging.error(f'{api} seems to be up but status code 200 was not received')
             except:
                 logging.info(f"'{api}' is DOWN")
             
