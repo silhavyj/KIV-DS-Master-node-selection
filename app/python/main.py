@@ -72,5 +72,11 @@ def get_election():
     }), 200
 
 
+@app.route('/master-announcement', methods=["POST"])
+def set_new_master():
+    bully.set_election(False)
+    return jsonify({'Response': 'OK'}), 200
+
+
 if __name__ == '__main__':
     app.run(host=str(bully.network_info.interface.ip), port=int(sys.argv[1]))

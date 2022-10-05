@@ -163,12 +163,14 @@ class Bully:
 
 
     def announce_new_master(self):
+        logging.info('I AM THE MASTER')
         pass
 
     
     def wait_until_master_announcement(self, secs):
         for i in range(0, secs):
             if self.election == False:
+                # TODO register with the new master (new color)
                 return
             time.sleep(1)
         self.run_bully_algorithm()
@@ -183,6 +185,7 @@ class Bully:
 
         exists_higher_node_id = False
         nodes_to_del = []
+        ongoing_election = False
 
         # Check if the election is possible
         # filter out higher node_ids
@@ -190,8 +193,12 @@ class Bully:
             if self.node_id < self.nodes[ip_addr]['node_id']:
                 try:
                     response = requests(f'http://{ip_addr}:500/election')
-                    if response.status == 200 and response.json()['status'] == 'False':
-                        exists_higher_node_id = True
+                    if response.status == 200:
+                        status = response.json()['status']
+                        if status == 'False':
+                            exists_higher_node_id = True
+                        else:
+                            ongoing_election = True
                 except:
                     nodes_to_del.append(ip_addr)
 
