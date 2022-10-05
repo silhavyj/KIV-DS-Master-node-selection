@@ -1,7 +1,8 @@
 import sys
+import time
 import logging
 import requests
-from threading import Lock
+from threading import Thread, Lock
 
 from network import NetworkInfo
 from utils import generate_node_id
@@ -121,4 +122,20 @@ class Bully:
                 sys.exit(2)
             self.set_color(response.json()['color'])
 
-            # TODO start pinging the master
+            Thread(target=self.ping_master).start()
+
+
+    def ping_master(self):
+        logging.info('Starting periodically pinging the master')
+        api = f'http://{self.master_ip_addr}:5000/health-check'
+        while True:
+            try:
+                response = requests.get(api)
+                if response.status_code != 200:
+                    break
+            except:
+                break
+            time.sleep(2) # sleep for 2 secs
+
+        logging.error(f'Master {self.master_ip_addr} seems to be down')
+        # TODO start the election algorithm

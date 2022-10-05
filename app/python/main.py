@@ -11,8 +11,12 @@ logging.basicConfig(level=logging.INFO)
 
 bully = Bully('enp0s25')
 
-network_scan = Thread(target=bully.discover_other_nodes, args=(18,))
-network_scan.start()
+Thread(target=bully.discover_other_nodes, args=(18,)).start()
+
+@app.route('/health-check', methods=['GET'])
+def is_alive():
+    return jsonify({'Response': 'OK'}), 200
+    
 
 @app.route('/node-details', methods=['GET'])
 def get_details():
@@ -49,7 +53,7 @@ def worker_register():
 
     data = request.get_json()
     logging.info(f"Node {data['ip_addr']} has registered with the master")
-    
+
     bully.add_node(data['ip_addr'], data)
     return jsonify({
         'response' : 'OK',
