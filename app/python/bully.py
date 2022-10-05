@@ -19,8 +19,9 @@ class Bully:
         self.color = 'GRAY'
         self.mtx = Lock()
         self.color_counter = 0
-
         self.nodes = {}
+        self.master_health_check = None
+
 
     def get_info(self):
         return {
@@ -31,6 +32,7 @@ class Bully:
             'ip_addr'  : str(self.network_info.interface.ip),
             'color'    : self.color
         }
+
 
     def calculate_node_color(self):
         color = None
@@ -43,6 +45,12 @@ class Bully:
         self.color_counter = (self.color_counter + 1) % 3
         self.mtx.release()
         return color
+
+
+    def delete_all_nodes(self):
+        self.mtx.acquire()
+        self.nodes = {}
+        self.mtx.release()
 
 
     def set_election(self, value):
@@ -134,7 +142,8 @@ class Bully:
                 sys.exit(2)
             self.set_color(response.json()['color'])
 
-            Thread(target=self.ping_master).start()
+            self.master_health_check = Thread(target=self.ping_master)
+            self.master_health_check.start()
 
 
     def ping_master(self):
@@ -152,6 +161,18 @@ class Bully:
         logging.error(f'Master {self.master_ip_addr} seems to be down')
         self.run_bully_algorithm()
 
+
+    def announce_new_master(self):
+        pass
+
+    
+    def wait_until_master_announcement(self, secs):
+        for i in range(0, secs):
+            if self.election == False:
+                return
+            time.sleep(1)
+        self.run_bully_algorithm()
+
     
     def run_bully_algorithm(self):
         # Set the flag (ongoing algorithm)
@@ -160,14 +181,27 @@ class Bully:
         # remove the master form the list of active nodes
         self.remove_node(self.master_ip_addr)
 
+        exists_higher_node_id = False
+        nodes_to_del = []
+
         # Check if the election is possible
         # filter out higher node_ids
         for ip_addr in self.nodes:
             if self.node_id < self.nodes[ip_addr]['node_id']:
                 try:
                     response = requests(f'http://{ip_addr}:500/election')
-                    if response.status == 200:
-                        pass
+                    if response.status == 200 and response.json()['status'] == 'False':
+                        exists_higher_node_id = True
                 except:
-                    # TODO remove the node as it's dead as well
-                    pass
+                    nodes_to_del.append(ip_addr)
+
+        for ip_addr in nodes_to_del:
+            self.remove_node(ip_addr)
+
+        # This is the new master
+        if exists_higher_node_id == False:
+            delete_all_nodes() # they're supposed to register again (does it matter tho?)
+            self.announce_new_master()
+        else:
+            # Wait till timeout or till a new master is announced
+            self.wait_until_master_announcement(5)

@@ -13,8 +13,11 @@ bully = Bully('enp0s25')
 
 Thread(target=bully.discover_other_nodes, args=(18,)).start()
 
+
 @app.route('/health-check', methods=['GET'])
 def is_alive():
+    data = request.get_json()
+    bully.add_node(data['ip_addr'], data)
     return jsonify({'Response': 'OK'}), 200
     
 
