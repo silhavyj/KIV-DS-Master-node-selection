@@ -1,5 +1,5 @@
 import logging
-from threading import Thread, Lock
+from threading import Thread
 from flask import Flask, request, jsonify
 
 from bully import Bully
@@ -8,8 +8,7 @@ app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
-bully = Bully('enp0s25')
-bully_mtx = Lock()
+bully = Bully('eth1')
 
 network_scan = Thread(target=bully.discover_other_nodes, args=(5,))
 network_scan.start()
@@ -27,18 +26,30 @@ def get_details():
 
 @app.route('/color', methods=['POST'])
 def set_color():
+    if bully.master == True:
+        return jsonify({
+            'Response': 'ERROR',
+            'Message' : 'Cannot set the color of the master'
+        }), 400
+
     data = request.get_json()
     if 'color' in data:
-        bully_mtx.acquire()
-        bully.color = data['color']
-        bully_mtx.release()
+        bully.set_color(data['color'])
         logging.info(f"color has been changed to '{bully.color}'")
         return jsonify({'Response': 'OK'}), 200
-    else:
-        return jsonify({'Response': 'ERROR'}), 400
+    
+    return jsonify({
+        'Response': 'ERROR',
+        'Message' : 'Invalid data (color is missing)'
+    }), 400
 
 
-@app.route('/register', methods=['POST'])
+@app.route('/worker_register', methods=['POST'])
+def worker_register():
+    pass
+
+
+@app.route('/master_announcement', methods=['POST'])
 def register_new_node():
     pass
 
