@@ -19,8 +19,11 @@ class Bully:
         self.color = 'GRAY'
         self.mtx = Lock()
         self.color_counter = 1
+        self.green = 0
+        self.red = 0
         self.nodes = {}
         self.master_health_check = None
+        self.node_colors = {}
 
 
     def get_info(self):
@@ -38,13 +41,21 @@ class Bully:
         color = None
         if self.color_counter < 2:
             color = 'GREEN'
+            self.green += 1
         else:
             color = 'RED'
+            self.red += 1
 
         self.mtx.acquire()
         self.color_counter = (self.color_counter + 1) % 3
         self.mtx.release()
         return color
+
+    
+    def set_node_color(self, ip_addr, color):
+        self.mtx.acquire()
+        self.node_colors[ip_addr] = color
+        self.mtx.release()
 
     
     def reset_color_counter(self):
@@ -96,6 +107,31 @@ class Bully:
         logging.info(f"Color has been changed to '{self.color}'")
 
     
+    def worker_health_check(self, ip_addr):
+        api = f'http://{ip_addr}:5000/health-check'
+        while True:
+            try:
+                response = requests.get(api)
+                if response.status_code != 200:
+                    break
+            except:
+                break
+            time.sleep(2)
+        
+        self.mtx.acquire()
+        lost_color = self.node_colors[ip_addr]
+        self.node_colors.pop(ip_addr)
+        if lost_color == 'RED':
+            self.red -= 1
+        else:
+            self.green -= 1
+        self.mtx.release()
+
+        # TODO do some math to figure out if what nodes need to be changed
+        # diff = self.green - self.red
+        print(f'R={self.red}; G={self.green}')
+        
+
     def discover_other_nodes(self, max_nodes, skip_itself=True):
         logging.info('Scanning the network...')
         
@@ -139,17 +175,23 @@ class Bully:
             self.set_master(True)
             self.set_color('GREEN')
             logging.info('No other nodes have been found on the network -> becoming the master')
-        elif self.master == False:
-            logging.info('Registering with the master')
-            api = f'http://{ip_addr}:5000/worker_register'
-            response = requests.post(api, json=self.get_info(), verify=False, timeout=0.5)
-            if response.status_code != 200:
+        elif self.master_ip_addr != None:
+            logging.info(f"Registering with the master ('{self.master_ip_addr}')")
+            api = f'http://{self.master_ip_addr}:5000/worker_register'
+            try:
+                response = requests.post(api, json=self.get_info(), verify=False)
+                if response.status_code != 200:
+                    logging.error('Failed to register with the master. Exiting...')
+                    sys.exit(2)
+            except:
                 logging.error('Failed to register with the master. Exiting...')
                 sys.exit(2)
             self.set_color(response.json()['color'])
 
             self.master_health_check = Thread(target=self.ping_master)
             self.master_health_check.start()
+        else:
+            self.run_bully_algorithm()
 
 
     def ping_master(self):
@@ -172,6 +214,7 @@ class Bully:
         logging.info('I AM THE MASTER')
         self.reset_color_counter()
         self.set_election(False)
+        self.set_master(True)
         pass
 
     
@@ -197,7 +240,7 @@ class Bully:
         # Check if the election is possible
         # filter out higher node_ids
         for ip_addr in self.nodes:
-            if self.node_id < self.nodes[ip_addr]['node_id']:
+            if self.node_id < int(self.nodes[ip_addr]['node_id']):
                 try:
                     response = requests(f'http://{ip_addr}:500/election')
                     if response.status == 200:

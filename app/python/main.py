@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
-bully = Bully('enp0s25')
+bully = Bully('eth1')
 
 Thread(target=bully.discover_other_nodes, args=(18,)).start()
 
@@ -57,10 +57,14 @@ def worker_register():
     data = request.get_json()
     logging.info(f"Node {data['ip_addr']} has registered with the master")
 
+    color = bully.calculate_node_color() 
     bully.add_node(data['ip_addr'], data)
+    bully.set_node_color(data['ip_addr'], color)
+    Thread(target=bully.worker_health_check, args=(data['ip_addr'], )).start()
+
     return jsonify({
         'response' : 'OK',
-        'color'    : bully.calculate_node_color() 
+        'color'    :  color
     }), 200
 
 
@@ -83,4 +87,5 @@ def set_new_master():
 
 
 if __name__ == '__main__':
-    app.run(host=str(bully.network_info.interface.ip), port=int(sys.argv[1]))
+    #app.run(host=str(bully.network_info.interface.ip), port=int(sys.argv[1]))
+    app.run(host=str(bully.network_info.interface.ip))
