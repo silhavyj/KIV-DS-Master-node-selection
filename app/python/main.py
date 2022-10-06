@@ -73,11 +73,11 @@ def worker_register():
 @app.route('/election', methods=['GET'])
 def get_election():
     logging.info('Received an election message')
-    if bully.master == True:
+    if bully.master is True:
         logging.info('Ignoring the election message')
         return jsonify({'response' : 'OK'}), 200
 
-    if bully.election == False:
+    if bully.election is False:
         bully.set_election(True)
         logging.info('Forwarding the election message')
         Thread(target=run_bully_algorithm, args=(bully, )).start()

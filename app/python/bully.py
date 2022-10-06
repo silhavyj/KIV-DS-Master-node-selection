@@ -184,7 +184,7 @@ class Bully:
                 response = requests.post(api, json=self.get_info(), verify=False)
                 if response.status_code != 200:
                     logging.error('Failed to register with the master. Exiting...')
-                    sys.exit(2)
+                    run_bully_algorithm(self)
             except:
                 logging.error('Failed to register with the master. Exiting...')
                 sys.exit(2)
@@ -243,14 +243,16 @@ def run_bully_algorithm(bully):
 
 
 def ping_master(bully):
-    logging.info('Starting periodically pinging the master')
-    api = f'http://{bully.master_ip_addr}:5000/health-check'
+    logging.info(f"Starting periodically pinging the master ({bully.master_ip_addr})")
     while True:
+        api = f'http://{bully.master_ip_addr}:5000/health-check'
+        #logging.info(f'pinging {api}')
         try:
             response = requests.get(api)
             if response.status_code != 200:
                 break
-        except:
+        except Exception as e:
+            #print(e)
             break
         time.sleep(2) # sleep for 2 secs
 
