@@ -205,6 +205,9 @@ class Bully:
 
 
 def run_bully_algorithm(bully):
+    if bully.master is True:
+        return
+
     # Set the flag (ongoing algorithm)
     bully.set_election(True)
 
@@ -230,7 +233,7 @@ def run_bully_algorithm(bully):
         bully.remove_node(ip_addr)
 
     # This is the new master
-    if exists_higher_node_id == False:
+    if exists_higher_node_id is False:
         # self.delete_all_nodes() # they're supposed to register again (does it matter tho?)
         announce_new_master(bully)
     else:
@@ -252,25 +255,33 @@ def ping_master(bully):
         time.sleep(2) # sleep for 2 secs
 
     # Might've been pronounced a master already
-    if bully.master == True:
+    if bully.master is False:
         logging.error(f'Master {bully.master_ip_addr} seems to be down')
         run_bully_algorithm(bully)
 
 
 def announce_new_master(bully):
+    if bully.master is True:
+        return
+        
     logging.info('I AM THE MASTER')
     bully.reset_color_counter()
     bully.set_election(False)
     bully.set_master(True)
 
     nodes_to_del = []
+    logging.info('Printing out known nodes...')
     for ip_addr in bully.nodes:
+        logging.info(ip_addr)
         try:
             logging.info(f'Announcing myself as the new master to {ip_addr}')
-            response = requests.post(f'http://{ip_addr}:5000/master-announcement', json={'ip_addr' : bully.network_info.interface.ip})
+            response = requests.post(f'http://{ip_addr}:5000/master-announcement', json={'ip_addr' : str(bully.network_info.interface.ip)})
             print(f'status_code = {response.status_code}')
-        except:
+        except Exception as e:
+            print(e)
             nodes_to_del.append(ip_addr)
 
     for ip_addr in nodes_to_del:
         bully.remove_node(ip_addr)
+
+    logging.info('Method successfully finished')

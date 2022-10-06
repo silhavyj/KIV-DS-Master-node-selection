@@ -10,7 +10,8 @@ app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
-bully = Bully('enp0s25')
+#bully = Bully('enp0s25')
+bully = Bully('eth1')
 
 Thread(target=bully.discover_other_nodes, args=(18,)).start()
 

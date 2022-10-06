@@ -20,3 +20,6 @@ print(nodes.get(1))
 nodes.pop(1)
 if nodes.get(1) is not None:
     nodes.pop(1)
+
+
+requests.post('http://10.10.41.17:5000/master-announcement', json={'ip_addr' : 's'})
