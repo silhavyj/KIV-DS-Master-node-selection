@@ -108,6 +108,7 @@ class Bully:
 
     
     def worker_health_check(self, ip_addr):
+        # TODO make this one thread!!
         api = f'http://{ip_addr}:5000/health-check'
         while True:
             try:
