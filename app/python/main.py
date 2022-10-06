@@ -10,6 +10,9 @@ app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
+#flask_log = logging.getLogger('werkzeug')
+#flask_log.setLevel(logging.ERROR)
+
 #bully = Bully('enp0s25')
 bully = Bully('eth1')
 
