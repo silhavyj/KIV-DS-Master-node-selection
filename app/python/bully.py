@@ -2,6 +2,7 @@ import sys
 import time
 import logging
 import requests
+import ipaddress 
 from threading import Thread, Lock
 
 from network import NetworkInfo
@@ -22,7 +23,6 @@ class Bully:
         self.green = 0
         self.red = 0
         self.nodes = {}
-        self.master_health_check = None
         self.node_colors = {}
 
 
@@ -78,7 +78,8 @@ class Bully:
 
     def remove_node(self, ip_addr):
         self.mtx.acquire()
-        self.nodes.pop(ip_addr)
+        if self.nodes.get(ip_addr) is not None:
+            self.nodes.pop(ip_addr)
         self.mtx.release()
 
     
@@ -189,73 +190,87 @@ class Bully:
                 sys.exit(2)
             self.set_color(response.json()['color'])
 
-            self.master_health_check = Thread(target=self.ping_master)
-            self.master_health_check.start()
+            Thread(target=ping_master, args=(self, )).start()
         else:
-            self.run_bully_algorithm()
+            run_bully_algorithm(self)
+
+    
+    #def wait_until_master_announcement(self, secs):
+    #    for i in range(0, secs):
+    #        if self.election == False:
+    #            # TODO register with the new master (new color)
+    #            return
+    #        time.sleep(1)
+    #    run_bully_algorithm(self)
 
 
-    def ping_master(self):
-        logging.info('Starting periodically pinging the master')
-        api = f'http://{self.master_ip_addr}:5000/health-check'
-        while True:
+def run_bully_algorithm(bully):
+    # Set the flag (ongoing algorithm)
+    bully.set_election(True)
+
+    # remove the master form the list of active nodes
+    bully.remove_node(bully.master_ip_addr)
+
+    exists_higher_node_id = False
+    nodes_to_del = []
+
+    # Check if the election is possible
+    # filter out higher node_ids
+    for ip_addr in bully.nodes:
+        if bully.network_info.interface.ip < ipaddress.ip_address(ip_addr):
             try:
-                response = requests.get(api)
-                if response.status_code != 200:
-                    break
+                logging.info(f'Sending election message from {bully.network_info.interface.ip} to {ip_addr}')
+                response = requests.get(f'http://{ip_addr}:5000/election')
+                if response.status_code == 200:
+                    exists_higher_node_id = True
             except:
-                break
-            time.sleep(2) # sleep for 2 secs
+                nodes_to_del.append(ip_addr)
 
-        logging.error(f'Master {self.master_ip_addr} seems to be down')
-        self.run_bully_algorithm()
+    for ip_addr in nodes_to_del:
+        bully.remove_node(ip_addr)
 
-
-    def announce_new_master(self):
-        logging.info('I AM THE MASTER')
-        self.reset_color_counter()
-        self.set_election(False)
-        self.set_master(True)
+    # This is the new master
+    if exists_higher_node_id == False:
+        # self.delete_all_nodes() # they're supposed to register again (does it matter tho?)
+        announce_new_master(bully)
+    else:
+        # Wait till timeout or till a new master is announced
+        # self.wait_until_master_announcement(5)
         pass
 
-    
-    def wait_until_master_announcement(self, secs):
-        for i in range(0, secs):
-            if self.election == False:
-                # TODO register with the new master (new color)
-                return
-            time.sleep(1)
-        self.run_bully_algorithm()
 
-    
-    def run_bully_algorithm(self):
-        # Set the flag (ongoing algorithm)
-        self.set_election(True)
+def ping_master(bully):
+    logging.info('Starting periodically pinging the master')
+    api = f'http://{bully.master_ip_addr}:5000/health-check'
+    while True:
+        try:
+            response = requests.get(api)
+            if response.status_code != 200:
+                break
+        except:
+            break
+        time.sleep(2) # sleep for 2 secs
 
-        # remove the master form the list of active nodes
-        self.remove_node(self.master_ip_addr)
+    # Might've been pronounced a master already
+    if bully.master == True:
+        logging.error(f'Master {bully.master_ip_addr} seems to be down')
+        run_bully_algorithm(bully)
 
-        exists_higher_node_id = False
-        nodes_to_del = []
 
-        # Check if the election is possible
-        # filter out higher node_ids
-        for ip_addr in self.nodes:
-            if self.node_id < int(self.nodes[ip_addr]['node_id']):
-                try:
-                    response = requests(f'http://{ip_addr}:500/election')
-                    if response.status == 200:
-                        exists_higher_node_id = True
-                except:
-                    nodes_to_del.append(ip_addr)
+def announce_new_master(bully):
+    logging.info('I AM THE MASTER')
+    bully.reset_color_counter()
+    bully.set_election(False)
+    bully.set_master(True)
 
-        for ip_addr in nodes_to_del:
-            self.remove_node(ip_addr)
+    nodes_to_del = []
+    for ip_addr in bully.nodes:
+        try:
+            logging.info(f'Announcing myself as the new master to {ip_addr}')
+            response = requests.post(f'http://{ip_addr}:5000/master-announcement', json={'ip_addr' : bully.network_info.interface.ip})
+            print(f'status_code = {response.status_code}')
+        except:
+            nodes_to_del.append(ip_addr)
 
-        # This is the new master
-        if exists_higher_node_id == False:
-            #self.delete_all_nodes() # they're supposed to register again (does it matter tho?)
-            self.announce_new_master()
-        else:
-            # Wait till timeout or till a new master is announced
-            self.wait_until_master_announcement(5)
+    for ip_addr in nodes_to_del:
+        bully.remove_node(ip_addr)
