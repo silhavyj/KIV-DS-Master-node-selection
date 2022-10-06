@@ -187,7 +187,7 @@ class Bully:
                     run_bully_algorithm(self)
             except:
                 logging.error('Failed to register with the master. Exiting...')
-                sys.exit(2)
+                run_bully_algorithm(self)
             self.set_color(response.json()['color'])
 
             Thread(target=ping_master, args=(self, )).start()
@@ -272,18 +272,15 @@ def announce_new_master(bully):
     bully.set_master(True)
 
     nodes_to_del = []
-    logging.info('Printing out known nodes...')
     for ip_addr in bully.nodes:
         logging.info(ip_addr)
         try:
             logging.info(f'Announcing myself as the new master to {ip_addr}')
             response = requests.post(f'http://{ip_addr}:5000/master-announcement', json={'ip_addr' : str(bully.network_info.interface.ip)})
-            print(f'status_code = {response.status_code}')
+            #print(f'status_code = {response.status_code}')
         except Exception as e:
-            print(e)
+            #print(e)
             nodes_to_del.append(ip_addr)
 
     for ip_addr in nodes_to_del:
         bully.remove_node(ip_addr)
-
-    logging.info('Method successfully finished')
