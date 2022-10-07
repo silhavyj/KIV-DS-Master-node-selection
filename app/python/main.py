@@ -1,7 +1,7 @@
 from threading import Thread
 from flask import Flask, request, jsonify
 
-from election import discover_nodes, init_new_master
+from election import discover_nodes, init_new_master, ping_master
 from node import Node
 from logger import log
 
@@ -38,6 +38,16 @@ def election():
         Thread(target=init_new_master, args=(node, )).start()
 
     return "", 200
+
+
+@app.route('/master-announcement', methods=['POST'])
+def set_new_master():
+    node.set_election_flag(False)
+    node.set_master_ip_addr(request.remote_addr)
+    log.info(f'New master has been announced {request.remote_addr}')
+    Thread(target=ping_master, args=(node, )).start()
+    return "", 200
+
 
 if __name__ == '__main__':
     app.run(host=str(node._interface.ip))

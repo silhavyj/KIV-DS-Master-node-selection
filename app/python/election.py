@@ -104,14 +104,14 @@ def ping_master(node):
 def announce_new_master(node):
     if node._is_master is True:
         return
-        
+
     node.set_as_master()
 
     nodes = node.get_nodes_copy()
     for ip_addr in nodes:
         try:
             log.info(f'Announcing the new master to {ip_addr}')
-            response = requests.post(f'http://{ip_addr}:{node._port}/master-announcement', json={'ip_addr' : str(node._interface.ip)})
+            response = requests.post(f'http://{ip_addr}:{node._port}/master-announcement')
             if response.status_code != 200:
                 node.remove_node(ip_addr)    
         except:
