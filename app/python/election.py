@@ -79,11 +79,8 @@ def init_new_master(node):
                 node.remove_node(ip_addr)
                 log.warning(f'Sending an election message from {node._interface.ip} to {ip_addr} was not successful')
 
-    print(f'exist_superior_node={exist_superior_node}')
     if exist_superior_node is False:
         _announce_new_master(node)
-    #else:
-    #    _wait_for_master_announcement(node)
 
 
 def ping_master(node):
@@ -122,16 +119,6 @@ def _announce_new_master(node):
             log.warning(f'Node {ip_addr} seems to be down')
             node.remove_node(ip_addr)
     _handle_clients(node)
-
-
-def _wait_for_master_announcement(node):
-    for i in range(0, 5):
-        time.sleep(1)
-        if node._election is False:
-            return
-
-    log.error('New master has not been announced yet (timeout)')
-    init_new_master(node)
 
 
 def _handle_clients(node):
