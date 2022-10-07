@@ -31,8 +31,8 @@ def discover_nodes(node, max_nodes=6):
                         log.info(f'Found the master node: {ip_addr}')
                     else:
                         log.critical(f'Two or more master nodes found on the network. Exiting...')
-                        sys.exit(1)
-                node.add_node(ip_addr)
+                        os.kill(os.getpid(), signal.SIGKILL)
+                node.add_node(str(ip_addr))
             else:
                 log.error(f'{ip_addr} seems to be up but status code 200 was not received')
         except:
@@ -47,7 +47,7 @@ def discover_nodes(node, max_nodes=6):
     if len(node._nodes) == 0:
         log.info('No other nodes have been found on the network')
         node.set_as_master()
-        #_handle_clients(node)
+        _handle_clients(node)
     elif node._master_ip_addr is not None:
         Thread(target=ping_master, args=(node, )).start()
     else:
@@ -79,10 +79,11 @@ def init_new_master(node):
                 node.remove_node(ip_addr)
                 log.warning(f'Sending an election message from {node._interface.ip} to {ip_addr} was not successful')
 
+    print(f'exist_superior_node={exist_superior_node}')
     if exist_superior_node is False:
         _announce_new_master(node)
-    else:
-        _wait_for_master_announcement(node)
+    #else:
+    #    _wait_for_master_announcement(node)
 
 
 def ping_master(node):
@@ -108,11 +109,11 @@ def _announce_new_master(node):
         return
 
     node.set_as_master()
-
     nodes = node.get_nodes_copy()
+
     for ip_addr in nodes:
         try:
-            log.info(f'Announcing the new master to {ip_addr}')
+            log.info(f'{len(nodes)} Announcing the new master to {ip_addr}')
             response = requests.post(f'http://{ip_addr}:{node._port}/master-announcement')
             if response.status_code != 200:
                 log.warning(f'Node {ip_addr} seems to be down')
@@ -120,14 +121,14 @@ def _announce_new_master(node):
         except:
             log.warning(f'Node {ip_addr} seems to be down')
             node.remove_node(ip_addr)
-    #_handle_clients(node)
+    _handle_clients(node)
 
 
 def _wait_for_master_announcement(node):
     for i in range(0, 5):
+        time.sleep(1)
         if node._election is False:
             return
-        time.sleep(1)
 
     log.error('New master has not been announced yet (timeout)')
     init_new_master(node)
@@ -140,7 +141,7 @@ def _handle_clients(node):
             return RED
         return GREEN
 
-    while node._election is False:
+    while True:
         index = 1 # not 0 because the master is always green
         nodes = node.get_nodes_copy()
     

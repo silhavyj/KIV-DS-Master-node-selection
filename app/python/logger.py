@@ -1,7 +1,7 @@
 import logging
 from colorlog import ColoredFormatter
 
-# logging.getLogger('werkzeug').setLevel(logging.ERROR)
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 LOG_LEVEL = logging.DEBUG
 LOGFORMAT = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
