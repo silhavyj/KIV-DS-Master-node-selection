@@ -18,7 +18,7 @@ def discover_nodes(node, max_nodes=6):
         if ip_addr == node._interface.ip:
             continue
 
-        endpoint = f'http://{ip_addr}:{node._port}/node-details'
+        endpoint = f'http://{ip_addr}:{node._port}/greetings'
         try:
             response = requests.post(endpoint, verify=False, timeout=0.5)
             if response.status_code == 200:
@@ -81,6 +81,18 @@ def init_new_master(node):
 
     if exist_superior_node is False:
         _announce_new_master(node)
+    else:
+        _wait_for_master_announcement(node)
+
+
+def _wait_for_master_announcement(node):
+    for i in range(0, 5):
+        if node._election is False:
+            return
+        time.sleep(1)
+
+    log.error('Master has not been announced yet (timeout)')
+    init_new_master(node)
 
 
 def ping_master(node):

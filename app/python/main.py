@@ -19,8 +19,13 @@ node = Node(interface_name='eth1', port=5000)
 Thread(target=discover_nodes, args=(node, )).start()
 
 
-@app.route('/node-details', methods=['POST'])
+@app.route('/node-details', methods=['GET'])
 def get_details():
+    return jsonify(node.get_details()), 200
+
+
+@app.route('/greetings', methods=['POST'])
+def greetings():
     node.add_node(request.remote_addr)
     return jsonify(node.get_details()), 200
 
