@@ -1,17 +1,19 @@
 import netifaces as ni
 from threading import Thread, Lock
+from ipaddress import IPv4Interface
 
 from logger import log
 
 class Node:
 
-    def __init__(self, interface_name):
+    def __init__(self, interface_name, port):
         self._election = False
         self._is_master = False
         self._master_ip_addr = None
         self._lock = Lock()
         self._nodes = []
         self._color = None
+        self._port = port
 
         interface_info = ni.ifaddresses(interface_name)[ni.AF_INET][0]
         ip_addr = interface_info['addr']
@@ -51,3 +53,9 @@ class Node:
         self._is_master = True
         self._lock.release()
         log.info(f'This node ({self._interface.ip} has now become the master)')
+
+    
+    def set_master_ip_addr(self, ip_addr):
+        self._lock.acquire()
+        self._master_ip_addr = ip_addr
+        self._lock.release()

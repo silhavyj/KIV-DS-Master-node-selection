@@ -1,37 +1,105 @@
-import requests
-import ipaddress
+import os
+import sys
+import logging
+from threading import Thread
+from flask import Flask, request, jsonify
 
-#r = requests.post('http://10.10.41.17:5000/color', json={"d" : "GREEN"})
-#print(r.json())
+from bully import Bully, run_bully_algorithm, ping_master
 
-#r = requests.get('http://10.10.41.17:5000/node-details')
-#data = r.json()
+app = Flask(__name__)
 
-#print(data)
-#if data['master'] == 'True':
-#    print("AAA")
+logging.basicConfig(level=logging.INFO)
 
-print(ipaddress.ip_address('176.0.1.3') < ipaddress.ip_address('176.0.1.3'))
+#flask_log = logging.getLogger('werkzeug')
+#flask_log.setLevel(logging.ERROR)
 
-nodes = {}
+#bully = Bully('enp0s25')
+bully = Bully('eth1')
 
-nodes[1] = 'A'
-print(nodes.get(1))
-nodes.pop(1)
-if nodes.get(1) is not None:
-    nodes.pop(1)
+Thread(target=bully.discover_other_nodes, args=(18,)).start()
 
 
-# requests.post('http://10.10.41.17:5000/master-announcement', json={'ip_addr' : 's'})
+@app.route('/health-check', methods=['GET'])
+def is_alive():
+    return jsonify({'Response': 'OK'}), 200
+    
 
-#coloredlogs.install()
-#logging.info("It works!")
-#logging.error('Err')
+@app.route('/node-details', methods=['GET'])
+def get_details():
+    data = request.get_json()
+    bully.add_node(data['ip_addr'], data)
+    return jsonify(bully.get_info()), 200
 
-from logger import log
 
-log.debug("A quirky message only developers care about")
-log.info("Curious users might want to know this")
-log.warning("Something is wrong and any user should be informed")
-log.error("Serious stuff, this is red for a reason")
-log.critical("OH NO everything is on fire")
+@app.route('/color', methods=['POST'])
+def set_color():
+    if bully.master == True:
+        return jsonify({
+            'response' : 'ERROR',
+            'message'  : 'Cannot set the color of the master'
+        }), 400
+
+    data = request.get_json()
+
+    if 'color' in data:
+        bully.set_color(data['color'])
+        return jsonify({'Response': 'OK'}), 200
+    
+    return jsonify({
+        'response' : 'ERROR',
+        'message'  : 'Invalid data (color is missing)'
+    }), 400
+
+
+@app.route('/worker_register', methods=['POST'])
+def worker_register():
+    if bully.master == False:
+        return jsonify({
+            'response' : 'ERROR',
+            'message'  : 'I am not the master on the network'
+        }), 400
+
+    data = request.get_json()
+    logging.info(f"Node {data['ip_addr']} has registered with the master")
+
+    color = bully.calculate_node_color() 
+    bully.add_node(data['ip_addr'], data)
+    bully.set_node_color(data['ip_addr'], color)
+    #Thread(target=bully.worker_health_check, args=(data['ip_addr'], )).start()
+
+    return jsonify({
+        'response' : 'OK',
+        'color'    :  color
+    }), 200
+
+
+@app.route('/election', methods=['GET'])
+def get_election():
+    logging.info('Received an election message')
+    if bully.master is True:
+        logging.info('Ignoring the election message')
+        return jsonify({'response' : 'OK'}), 200
+
+    if bully.election is False:
+        bully.set_election(True)
+        logging.info('Forwarding the election message')
+        Thread(target=run_bully_algorithm, args=(bully, )).start()
+    else:
+        logging.info('Ignoring the election message')
+
+    return jsonify({'response' : 'OK'}), 200
+
+
+@app.route('/master-announcement', methods=['POST'])
+def set_new_master():
+    bully.set_election(False)
+    data = request.get_json()
+    bully.set_master_ip_addr(data['ip_addr'])
+    logging.info(f"New master has been announced ({data['ip_addr']})")
+    Thread(target=ping_master, args=(bully, )).start()
+    return jsonify({'Response': 'OK'}), 200
+
+
+if __name__ == '__main__':
+    #app.run(host=str(bully.network_info.interface.ip), port=int(sys.argv[1]))
+    app.run(host=str(bully.network_info.interface.ip))
