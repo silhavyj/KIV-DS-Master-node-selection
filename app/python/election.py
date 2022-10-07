@@ -1,6 +1,7 @@
 import sys
 import time
 import requests
+import ipaddress
 from threading import Thread
 
 from logger import log
@@ -47,8 +48,7 @@ def discover_nodes(node, max_nodes=6):
 
     if len(node._nodes) == 0:
         log.info('No other nodes have been found on the network')
-        node.set_is_master()
-        node.set_color(GREEN_COLOR)
+        node.set_as_master()
     elif node._master_ip_addr is not None:
         Thread(target=ping_master, args=(node, )).start()
     else:
@@ -57,7 +57,31 @@ def discover_nodes(node, max_nodes=6):
         
 
 def init_new_master(node):
-    pass
+    log.info('Starting election of a new master')
+    if node._is_master is True:
+        return
+    
+    node.set_election_flag(True)
+    node.remove_node(node._master_ip_addr)
+
+    exist_superior_node = False
+    nodes = node.get_nodes_copy()
+
+    for ip_addr in nodes:
+        if node._interface.ip < ipaddress.ip_address(ip_addr):
+            try:
+                logging.info(f'Sending an election message from {node._interface.ip} to {ip_addr}')
+                response = requests.get(f'http://{ip_addr}:{node._port}/election')
+                if response.status_code == 200:
+                    exist_superior_node = True
+            except:
+                node.remove_node(ip_addr)
+
+    if exist_superior_node is False:
+        announce_new_master(node)
+    else:
+        # TODO wait for e.g. 3s and then run the init process again
+        pass
 
 
 def ping_master(node):
@@ -78,4 +102,6 @@ def ping_master(node):
 
 
 def announce_new_master(node):
-    pass
+    if node._is_master is True:
+        return
+    node.set_as_master()

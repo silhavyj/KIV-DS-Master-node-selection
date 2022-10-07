@@ -1,8 +1,9 @@
 from threading import Thread
 from flask import Flask, request, jsonify
 
-from election import discover_nodes
+from election import discover_nodes, init_new_master
 from node import Node
+from logger import log
 
 app = Flask(__name__)
 
@@ -21,6 +22,22 @@ def get_details():
 def is_alive():
     return "", 200
 
+
+@app.route('/election', methods=['GET'])
+def election():
+    log.info('Received an election message')
+    if node._is_master is True:
+        log.info('Ignoring the election message (I have already selected myself as the master)')
+        return "", 200
+    
+    if node._election is True:
+        log.info('Ignoring the election message (I have already tried to forward it)')
+    else:
+        log.info('Forwarding the election message')
+        node.set_election_flag(True)
+        Thread(target=init_new_master, args=(node, )).start()
+
+    return "", 200
 
 if __name__ == '__main__':
     app.run(host=str(node._interface.ip))

@@ -1,8 +1,14 @@
 import netifaces as ni
 from threading import Thread, Lock
 from ipaddress import IPv4Interface
+from enum import Enum
 
 from logger import log
+
+class Color(Enum):
+    RED = 1,
+    GREEN = 2,
+    GRAY = 3
 
 class Node:
 
@@ -12,7 +18,7 @@ class Node:
         self._master_ip_addr = None
         self._lock = Lock()
         self._nodes = []
-        self._color = None
+        self._color = Color.GRAY
         self._port = port
 
         interface_info = ni.ifaddresses(interface_name)[ni.AF_INET][0]
@@ -24,7 +30,7 @@ class Node:
     def get_details(self):
         return {
             'is_master' : self._is_master,
-            'color'     : self._color
+            'color'     : str(self._color)
         }
 
 
@@ -41,16 +47,27 @@ class Node:
         self._lock.release()
 
     
-    def set_color(self, value):
+    def remove_node(self, ip_addr):
         self._lock.acquire()
-        self._color = value
+        if ip_addr in self._nodes:
+            self._nodes.remove(ip_addr)
         self._lock.release()
+
+    
+    def set_color(self, value, thread_safe=True):
+        if thread_safe is True:
+            self._lock.acquire()
+        self._color = value
+        if thread_safe is True:
+            self._lock.release()
         log.info(f'The color has been changed to {value}')
 
     
-    def set_is_master(self):
+    def set_as_master(self):
         self._lock.acquire()
         self._is_master = True
+        self._election = False
+        self.set_color(Color.GREEN, False)
         self._lock.release()
         log.info(f'This node ({self._interface.ip} has now become the master)')
 
@@ -59,3 +76,10 @@ class Node:
         self._lock.acquire()
         self._master_ip_addr = ip_addr
         self._lock.release()
+
+
+    def get_nodes_copy(self):
+        self._lock.acquire()
+        nodes_copy = self._nodes.copy()
+        self._lock.release()
+        return nodes_copy
