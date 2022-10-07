@@ -12,7 +12,7 @@ node = Node(interface_name='eth1', port=5000)
 Thread(target=discover_nodes, args=(node, )).start()
 
 
-@app.route('/node-details', methods=['GET'])
+@app.route('/node-details', methods=['POST'])
 def get_details():
     node.add_node(request.remote_addr)
     return jsonify(node.get_details()), 200
@@ -23,7 +23,7 @@ def is_alive():
     return "", 200
 
 
-@app.route('/election', methods=['GET'])
+@app.route('/election', methods=['POST'])
 def election():
     log.info('Received an election message')
     if node._is_master is True:
@@ -46,6 +46,14 @@ def set_new_master():
     node.set_master_ip_addr(request.remote_addr)
     log.info(f'New master has been announced {request.remote_addr}')
     Thread(target=ping_master, args=(node, )).start()
+    return "", 200
+
+
+@app.route('/color', methods=['POST'])
+def set_color():
+    if node._is_master is True:
+        log.error('Cannot change the color of the master')
+    node.set_color(request.get_json()['color'])
     return "", 200
 
 

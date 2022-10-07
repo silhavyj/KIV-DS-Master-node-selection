@@ -6,10 +6,8 @@ from enum import Enum
 from logger import log
 
 
-class Color(Enum):
-    RED = 1,
-    GREEN = 2,
-    GRAY = 3
+RED   = 'RED'
+GREEN = 'GREEN'
 
 
 class Node:
@@ -20,7 +18,7 @@ class Node:
         self._master_ip_addr = None
         self._lock = Lock()
         self._nodes = []
-        self._color = Color.GRAY
+        self._color = 'GRAY'
         self._port = port
 
         interface_info = ni.ifaddresses(interface_name)[ni.AF_INET][0]
@@ -32,7 +30,7 @@ class Node:
     def get_details(self):
         return {
             'is_master' : self._is_master,
-            'color'     : str(self._color)
+            'color'     : self._color
         }
 
 
@@ -60,17 +58,18 @@ class Node:
     def set_color(self, value, thread_safe=True):
         if thread_safe is True:
             self._lock.acquire()
-        self._color = value
+        if self._color != value:
+            log.info(f'The color has been changed to {value}')
+            self._color = value
         if thread_safe is True:
             self._lock.release()
-        log.info(f'The color has been changed to {value}')
 
     
     def set_as_master(self):
         self._lock.acquire()
         self._is_master = True
         self._election = False
-        self.set_color(Color.GREEN, False)
+        self.set_color(GREEN, False)
         self._lock.release()
         log.info(f'This node ({self._interface.ip} has now become the master)')
 
