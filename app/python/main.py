@@ -1,3 +1,6 @@
+import os
+import sys
+import signal
 from threading import Thread
 from flask import Flask, request, jsonify
 
@@ -5,9 +8,13 @@ from election import discover_nodes, init_new_master, ping_master
 from node import Node
 from logger import log
 
+
+def _signal_handler(sig, frame):
+    os.kill(os.getpid(), signal.SIGKILL)
+
 app = Flask(__name__)
 
-#node = Node(interface_name='enp0s25', port=5000)
+signal.signal(signal.SIGINT, _signal_handler)
 node = Node(interface_name='eth1', port=5000)
 Thread(target=discover_nodes, args=(node, )).start()
 
@@ -51,9 +58,8 @@ def set_new_master():
 
 @app.route('/color', methods=['POST'])
 def set_color():
-    if node._is_master is True:
-        log.error('Cannot change the color of the master')
-    node.set_color(request.get_json()['color'])
+    if node._is_master is False:
+        node.set_color(request.get_json()['color'])
     return "", 200
 
 

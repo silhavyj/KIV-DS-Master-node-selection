@@ -17,7 +17,7 @@ class Node:
         self._is_master = False
         self._master_ip_addr = None
         self._lock = Lock()
-        self._nodes = []
+        self._nodes = set()
         self._color = 'GRAY'
         self._port = port
 
@@ -43,8 +43,8 @@ class Node:
     def add_node(self, ip_addr):
         self._lock.acquire()
         if ip_addr not in self._nodes:
-            self._nodes.append(ip_addr)
             log.info(f'New node discovered {ip_addr}')
+            self._nodes.add(ip_addr)
         self._lock.release()
 
     
