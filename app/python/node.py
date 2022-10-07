@@ -44,6 +44,7 @@ class Node:
         self._lock.acquire()
         if ip_addr not in self._nodes:
             self._nodes.append(ip_addr)
+            log.info(f'New node discovered {ip_addr}')
         self._lock.release()
 
     

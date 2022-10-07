@@ -70,7 +70,7 @@ def init_new_master(node):
     for ip_addr in nodes:
         if node._interface.ip < ipaddress.ip_address(ip_addr):
             try:
-                logging.info(f'Sending an election message from {node._interface.ip} to {ip_addr}')
+                log.info(f'Sending an election message from {node._interface.ip} to {ip_addr}')
                 response = requests.get(f'http://{ip_addr}:{node._port}/election')
                 if response.status_code == 200:
                     exist_superior_node = True
@@ -104,4 +104,15 @@ def ping_master(node):
 def announce_new_master(node):
     if node._is_master is True:
         return
+        
     node.set_as_master()
+
+    nodes = node.get_nodes_copy()
+    for ip_addr in nodes:
+        try:
+            log.info(f'Announcing the new master to {ip_addr}')
+            response = requests.post(f'http://{ip_addr}:{node._port}/master-announcement', json={'ip_addr' : str(node._interface.ip)})
+            if response.status_code != 200:
+                node.remove_node(ip_addr)    
+        except:
+            node.remove_node(ip_addr)
