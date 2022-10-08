@@ -6,4 +6,4 @@ COPY . /opt/view
 
 RUN pip3 install -r /opt/view/python/requirements.txt
 
-#CMD /usr/bin/python3 /opt/view/python/main.py
+CMD /usr/bin/python3 /opt/view/python/main.py

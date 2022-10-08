@@ -46,7 +46,7 @@ config_file.close()
 
 nodes = []
 for line in lines:
-    line.strip()
+    line = line.strip()
     if line != '':
         print(f'Read {line} from the config file')
         nodes.append(line)
