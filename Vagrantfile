@@ -44,6 +44,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         trigger.ruby do |env, machine|
             puts "Building node image:"
             `docker build app -t "#{APP_IMAGE}"`
+            puts "Building view image:"
+            `docker build view -t "#{VIEW_IMAGE}"`
         end
     end
 
@@ -64,4 +66,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             s.vm.post_up_message = "Node #{node_name} is up and running. You can access the node with 'vagrant ssh #{node_name}'}"
         end
     end
+
+    config.vm.define VIEW[:name] do |s|
+        s.vm.network "private_network", ip: VIEW[:ip_addr]
+        # Forward port 80 in the container to port 8080 on the host machine. Listen on 0.0.0.0 (all interfaces)
+        s.vm.network "forwarded_port", guest: 5000, host: 8080, host_ip: "0.0.0.0"
+        s.vm.hostname = VIEW[:name]
+        s.vm.provider "docker" do |d|
+          d.image = VIEW[:image]
+          d.name = VIEW[:name]
+          d.has_ssh = true
+        end
+        s.vm.post_up_message = "Node #{VIEW[:name]} up and running. You can access the node with 'vagrant ssh #{VIEW[:name]}'}"
+      end
 end
