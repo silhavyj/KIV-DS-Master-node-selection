@@ -1,3 +1,4 @@
+import socket
 import netifaces as ni
 from threading import Thread, Lock
 from ipaddress import IPv4Interface
@@ -7,6 +8,7 @@ from logger import log
 
 
 RED   = 'RED'
+GRAY  = 'GRAY'
 GREEN = 'GREEN'
 
 
@@ -17,9 +19,10 @@ class Node:
         self._is_master = False
         self._master_ip_addr = None
         self._lock = Lock()
-        self._nodes = set()
-        self._color = 'GRAY'
+        self._nodes = []
+        self._color = GRAY
         self._port = port
+        self._hostname = socket.gethostname()
 
         interface_info = ni.ifaddresses(interface_name)[ni.AF_INET][0]
         ip_addr = interface_info['addr']
@@ -30,7 +33,8 @@ class Node:
     def get_details(self):
         return {
             'is_master' : self._is_master,
-            'color'     : self._color
+            'color'     : self._color,
+            'hostname'  : self._hostname
         }
 
 
@@ -43,7 +47,7 @@ class Node:
     def add_node(self, ip_addr):
         self._lock.acquire()
         if ip_addr not in self._nodes:
-            self._nodes.add(ip_addr)
+            self._nodes.append(ip_addr)
             log.info(f'New node discovered {ip_addr}')
         self._lock.release()
 
@@ -51,7 +55,7 @@ class Node:
     def remove_node(self, ip_addr):
         self._lock.acquire()
         if ip_addr in self._nodes:
-            self._nodes.remove(ip_addr)
+            self._nodes.pop(ip_addr)
             log.info(f'Removed node {ip_addr}')
         self._lock.release()
 

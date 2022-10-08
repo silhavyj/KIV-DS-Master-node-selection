@@ -53,10 +53,13 @@ def get_status():
     for ip_addr in nodes:
         try:
             print(f'Checking the status of {ip_addr}')
-            response = requests.get(f'http://{ip_addr}:5000/node-details')
+            response = requests.get(f'http://{ip_addr}:5000/node-details', verify=False, timeout=0.5)
             if response.status_code == 200:
                 data = response.json()
-                status += "<li><span style='font-weight: bold;'>"
+                status += "<li><span>"
+                status += data['hostname']
+                status += "</span> | "
+                status += "<span style='font-weight: bold;'>"
                 if data['is_master'] is True:
                     status += 'M'
                 else:
@@ -66,6 +69,8 @@ def get_status():
                 status += " | </span><span style='color: "
                 if data['color'] == 'GREEN':
                     status += "green;'>GREEN</span><hr></li>"
+                elif data['color'] == 'GRAY':
+                    status += "gray;'>GRAY</span><hr></li>"
                 else:
                     status += "red;'>RED</span><hr></li>"
         except Exception as e:

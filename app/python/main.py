@@ -9,12 +9,14 @@ from node import Node
 from logger import log
 
 
-def _signal_handler(sig, frame):
+def _terminate_signal_handler(sig, frame):
     os.kill(os.getpid(), signal.SIGKILL)
 
 app = Flask(__name__)
 
-signal.signal(signal.SIGINT, _signal_handler)
+signal.signal(signal.SIGINT, _terminate_signal_handler)
+signal.signal(signal.SIGTERM, _terminate_signal_handler)
+
 node = Node(interface_name='eth1', port=5000)
 Thread(target=discover_nodes, args=(node, )).start()
 
