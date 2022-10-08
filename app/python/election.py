@@ -20,7 +20,7 @@ def discover_nodes(node, max_nodes=20):
 
         endpoint = f'http://{ip_addr}:{node._port}/greetings'
         try:
-            response = requests.post(endpoint, verify=False, timeout=0.5)
+            response = requests.post(endpoint, verify=False, timeout=node._timeout)
             if response.status_code == 200:
                 log.info(f'{ip_addr} is up')
                 data = response.json()
@@ -70,7 +70,7 @@ def init_new_master(node):
         if node._interface.ip < ipaddress.ip_address(ip_addr):
             try:
                 log.info(f'Sending an election message from {node._interface.ip} to {ip_addr}')
-                response = requests.post(f'http://{ip_addr}:{node._port}/election')
+                response = requests.post(f'http://{ip_addr}:{node._port}/election', verify=False, timeout=node._timeout)
                 if response.status_code == 200:
                     exist_superior_node = True
                 else:
@@ -86,7 +86,7 @@ def init_new_master(node):
 
 
 def _wait_for_master_announcement(node):
-    for i in range(0, 5):
+    for i in range(0, 20):
         if node._election is False:
             return
         time.sleep(1)
@@ -100,7 +100,7 @@ def ping_master(node):
     while True:
         endpoint = f'http://{node._master_ip_addr}:{node._port}/health-check'
         try:
-            response = requests.get(endpoint, verify=False, timeout=0.5)
+            response = requests.get(endpoint, verify=False, timeout=node._timeout)
             if response.status_code != 200:
                 break
         except:
@@ -123,7 +123,7 @@ def _announce_new_master(node):
     for ip_addr in nodes:
         try:
             log.info(f'{len(nodes)} Announcing the new master to {ip_addr}')
-            response = requests.post(f'http://{ip_addr}:{node._port}/master-announcement')
+            response = requests.post(f'http://{ip_addr}:{node._port}/master-announcement', verify=False, timeout=node._timeout)
             if response.status_code != 200:
                 log.warning(f'Node {ip_addr} seems to be down')
                 node.remove_node(ip_addr)    
@@ -146,7 +146,7 @@ def _handle_clients(node):
     
         for ip_addr in nodes:
             try:
-                response = requests.post(f'http://{ip_addr}:{node._port}/color', json={'color' : get_color(index)})
+                response = requests.post(f'http://{ip_addr}:{node._port}/color', json={'color' : get_color(index)}, verify=False, timeout=node._timeout)
                 if response.status_code != 200:
                     log.warning(f'Node {ip_addr} seems to be down')
                     node.remove_node(ip_addr)

@@ -14,7 +14,7 @@ GREEN = 'GREEN'
 
 class Node:
 
-    def __init__(self, interface_name, port):
+    def __init__(self, interface_name, port, timeout=0.5):
         self._election = False
         self._is_master = False
         self._master_ip_addr = None
@@ -22,6 +22,7 @@ class Node:
         self._nodes = []
         self._color = GRAY
         self._port = port
+        self._timeout = 0.5
         self._hostname = socket.gethostname()
 
         interface_info = ni.ifaddresses(interface_name)[ni.AF_INET][0]

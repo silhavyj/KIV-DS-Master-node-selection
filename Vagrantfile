@@ -28,7 +28,7 @@ VIEW = {
     :config_file => "view/python/config.ini"
 }
 
-NODES_COUNT = 4
+NODES_COUNT = 2
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.trigger.before :up, type: :command do |trigger|
