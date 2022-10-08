@@ -47,16 +47,16 @@ class Node:
     def add_node(self, ip_addr):
         self._lock.acquire()
         if ip_addr not in self._nodes:
-            self._nodes.append(ip_addr)
-            log.info(f'New node discovered {ip_addr}')
+            self._nodes.append(str(ip_addr))
+            log.info(f'New node discovered {str(ip_addr)}')
         self._lock.release()
 
     
     def remove_node(self, ip_addr):
         self._lock.acquire()
         if ip_addr in self._nodes:
-            self._nodes.pop(ip_addr)
-            log.info(f'Removed node {ip_addr}')
+            self._nodes.remove(str(ip_addr))
+            log.info(f'Removed node {str(ip_addr)}')
         self._lock.release()
 
     

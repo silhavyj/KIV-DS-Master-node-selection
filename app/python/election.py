@@ -81,18 +81,18 @@ def init_new_master(node):
 
     if exist_superior_node is False:
         _announce_new_master(node)
-    #else:
-    #    _wait_for_master_announcement(node)
+    else:
+        _wait_for_master_announcement(node)
 
 
-#def _wait_for_master_announcement(node):
-#    for i in range(0, 5):
-#        if node._election is False:
-#            return
-#        time.sleep(1)
+def _wait_for_master_announcement(node):
+    for i in range(0, 5):
+        if node._election is False:
+            return
+        time.sleep(1)
 
-#    log.error('Master has not been announced yet (timeout)')
-#    init_new_master(node)
+    log.error('Master has not been announced yet (timeout)')
+    init_new_master(node)
 
 
 def ping_master(node):
@@ -100,7 +100,7 @@ def ping_master(node):
     while True:
         endpoint = f'http://{node._master_ip_addr}:{node._port}/health-check'
         try:
-            response = requests.get(endpoint)
+            response = requests.get(endpoint, verify=False, timeout=0.5)
             if response.status_code != 200:
                 break
         except:
