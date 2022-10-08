@@ -1,7 +1,7 @@
 VAGRANTFILE_API_VERSION = "2"
 
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'docker'
-ENV['VAGRANT_NO_PARALLEL'] = "1"
+#ENV['VAGRANT_NO_PARALLEL'] = "1"
 ENV['FORWARD_DOCKER_PORTS'] = "1"
 ENV['VAGRANT_EXPERIMENTAL']="typed_triggers"
 
@@ -28,7 +28,7 @@ VIEW = {
     :config_file => "view/python/config.ini"
 }
 
-NODES_COUNT = 2
+NODES_COUNT = 6
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.trigger.before :up, type: :command do |trigger|
@@ -54,7 +54,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     config.vm.define VIEW[:name] do |s|
         s.vm.network "private_network", ip: VIEW[:ip_addr]
-        # Forward port 80 in the container to port 8080 on the host machine. Listen on 0.0.0.0 (all interfaces)
         s.vm.network "forwarded_port", guest: 5000, host: 8080, host_ip: "0.0.0.0"
         s.vm.hostname = VIEW[:name]
         s.vm.provider "docker" do |d|

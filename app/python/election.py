@@ -61,7 +61,6 @@ def init_new_master(node):
         return
     
     node.set_election_flag(True)
-    node.remove_node(node._master_ip_addr)
 
     exist_superior_node = False
     nodes = node.get_nodes_copy()
@@ -81,35 +80,26 @@ def init_new_master(node):
 
     if exist_superior_node is False:
         _announce_new_master(node)
-    else:
-        _wait_for_master_announcement(node)
-
-
-def _wait_for_master_announcement(node):
-    for i in range(0, 20):
-        if node._election is False:
-            return
-        time.sleep(1)
-
-    log.error('Master has not been announced yet (timeout)')
-    init_new_master(node)
 
 
 def ping_master(node):
-    log.info(f"Starting periodically pinging the master ({node._master_ip_addr})")
+    master_ip_addr = node._master_ip_addr
+    endpoint = f'http://{master_ip_addr}:{node._port}/health-check'
+
+    log.info(f"Starting periodically pinging the master ({master_ip_addr})")
     while True:
-        endpoint = f'http://{node._master_ip_addr}:{node._port}/health-check'
         try:
             response = requests.get(endpoint, verify=False, timeout=node._timeout)
             if response.status_code != 200:
                 break
-        except:
+        except Exception as e:
+            print(e)
             break
-        
         time.sleep(2)
     
     if node._is_master is False:
-        log.error(f'Master ({node._master_ip_addr}) seems to be down')
+        log.error(f'Master ({master_ip_addr}) seems to be down')
+        node.remove_node(master_ip_addr)
         init_new_master(node)
 
 
@@ -122,7 +112,7 @@ def _announce_new_master(node):
 
     for ip_addr in nodes:
         try:
-            log.info(f'{len(nodes)} Announcing the new master to {ip_addr}')
+            log.info(f'Announcing the new master to {ip_addr}')
             response = requests.post(f'http://{ip_addr}:{node._port}/master-announcement', verify=False, timeout=node._timeout)
             if response.status_code != 200:
                 log.warning(f'Node {ip_addr} seems to be down')
