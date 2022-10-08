@@ -59,10 +59,11 @@ def get_status():
                 status += "<li><span>"
                 status += data['hostname']
                 status += "</span> | "
-                status += "<span style='font-weight: bold;'>"
                 if data['is_master'] is True:
+                    status += "<span style='font-weight: bold; color: purple;'>"
                     status += 'M'
                 else:
+                    status += "<span style='font-weight: bold;'>"
                     status += 'S'
                 status += ' | </span><span>'
                 status += ip_addr
