@@ -8,7 +8,7 @@ from logger import log
 from node import Node, GREEN, RED
 
 
-def discover_nodes(node, max_nodes=6):
+def discover_nodes(node, max_nodes=20):
     log.info('Scanning the network')
 
     count = 0

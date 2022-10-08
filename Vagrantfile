@@ -12,18 +12,34 @@ unless Vagrant.has_plugin?("vagrant-docker-compose")
 end
 
 APP_IMAGE  = "ds/task01/silhavyj/app:0.1"
+VIEW_IMAGE  = "ds/task01/silhavyj/view:0.1"
 
 NODES = {
     :name_prefix => "node-",
     :subnet => "176.0.1.",
-    :ip_offset => 1,
+    :ip_offset => 5,
     :image => APP_IMAGE
 }
 
-NODES_COUNT = 4
+VIEW = {
+    :name => "node-view",
+    :ip_addr => "176.0.1.2",
+    :image => VIEW_IMAGE,
+    :config_file => "view/python/config.ini"
+}
+
+NODES_COUNT = 2
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.trigger.before :up, type: :command do |trigger|
+        File.delete(VIEW[:config_file]) if File.exist?(VIEW[:config_file])
+        cfile = File.new(VIEW[:config_file], "w")
+        (1..NODES_COUNT).each do |i|
+            node_ip_addr = "#{NODES[:subnet]}#{NODES[:ip_offset] + i}"
+            cfile.puts "#{node_ip_addr}"
+        end
+        cfile.close
+
         trigger.name = "Build docker images"
         trigger.ruby do |env, machine|
             puts "Building node image:"
