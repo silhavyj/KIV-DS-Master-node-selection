@@ -2,7 +2,7 @@
  
 This project implements a **selection of a single master node** out of *N* nodes connected to a computer network. This problem was tackled using so-called **election algorithm** where every node can send a message to every other node.
  
-The purpose of the master is to assign each node a color (red or green), so the ration of 1/3 red and 2/3 green is satisfied. The master itself is always colored green. When a node is not responding to the master, it is considered to be down and the master recolors the remaining nodes accordingly if needed. When the master node goes offline, the process of selecting a new one starts again.
+The purpose of the master is to assign each node a color (red or green), so the ration of 1/3 red and 2/3 green is satisfied. The master itself is always colored green. When a node is not responding to the master, it is considered to be down, and the master recolors the remaining nodes accordingly if needed. When the master node goes offline, the process of selecting a new one starts again.
 
 <img src="images/01.png">
 
@@ -14,7 +14,7 @@ In order to get the whole project up and running, the user is required to have [
 
 ### Starting the application
 
-Once the user has installed all the requirements, all they have to do is to navigate to the root folder of the project directory where the Vagrant file is located and run the following command.
+Once the user has installed all the requirements, all they have to do is to navigate to the root folder of the project directory, where the Vagrant file is located, and run the following command.
 
 ```
 vagrant up
@@ -26,9 +26,9 @@ This will automatically start all the containers that make up the project. It ha
 #ENV['VAGRANT_NO_PARALLEL'] = "1"
 ```
 
-**WARNING**: If you encounter any errors, try to terminate the process using `CTR+C` and running the `vagrant up` command again.
+**WARNING**: If you encounter any errors, try to terminate the process using `CTR+C` and running the `vagrant up` command again (it worked for me...).
 
-The user can verify that all nodes are up and running using the `docker ps` commands which lists out running containers.
+The user can verify that all nodes are up and running using the `docker ps` command which lists out running containers.
 
 #### Changing up the number of nodes
 
@@ -54,7 +54,7 @@ Alongside the *N* nodes running on the network, there is also an extra node whic
 
 <img src="images/02.png">
 
-The table columns represent the hostname, role (master/slave), ip address, and color. The master node is represented as a purple M. If there is a gray color assigned to a node, it means that it is in the process of scanning the network. Once the master is found, the node will be assigned its corresponding color.
+The table columns represent the hostname, role (master/slave), ip address, and color. The master node is represented as a purple M. If there is a gray color assigned to a node, it means that it is in the process of scanning the network. Once the master is found, the node will be assigned its designated color.
 
 ## Interacting with the application
 
@@ -82,7 +82,7 @@ The view node works as an observer of the state of all the other nodes. Each nod
 
 #### When a node starts up
 
-When a node starts up, it will first start scanning the network looking for other nodes that might already be up and running. It is done by going over the entire range of ip addresses one by one. For each an every ip address, it attempts to call the `\greetings` API, which the nodes use to announce themselves. If another node is found, its ip address is stored into a list of known nodes on the network. It also fetches information on whether the node that was just discovered happens to be the master. Only one master is allowed to be on the network at all times. 
+When a node starts up, it will first start scanning the network looking for other nodes that might already be up and running. It is done by going over the entire range of ip addresses one by one. For each an every ip address, it attempts to call the `/greetings` API, which the nodes use to announce themselves. If another node is found, its ip address is stored into a list of known nodes on the network. It also fetches information on whether the node that was just discovered happens to be the master. Only one master is allowed to be on the network at all times. 
 
 <img src="images/04.png">
 
@@ -94,9 +94,9 @@ At the end of the scan, there can be three different outcomes. If no other nodes
 
 As mentioned previously, the nodes perform a regular ping on the master node. If a node finds out that the master node is not responding, it will start off the master election process.
 
-Usually, each node has a unique number which is considered to be its ID. In this implementation, the ID was substituted by the node's ip address (the higher the ip address, the higher the priority).
+Usually, each node has a unique number which is considered to be its ID. In this implementation, the ID was substituted with the node's ip address (the higher the ip address, the higher the priority).
 
-When a node find out that the master is offline, it sends an election message (`POST /election`) to all its known nodes which have a higher ip address. If there are no other nodes with a higher ip address, the node itself becomes the new master and lets all its known nodes know about it through `POST /master-announcement`. If the node has sent an election message to all the other nodes that it was supposed to, it will await the new master announcement. 
+When a node find out that the master is offline, it sends an election message (`POST /election`) to all its known nodes which were assigned a higher ip address. If there are no other nodes with a higher ip address, the node itself becomes the new master and lets all its known nodes know about it through `POST /master-announcement`. If the node has sent an election message to all the other nodes that it was supposed to, it will await the new master announcement. 
 
 <img src="images/05.png">
 
@@ -106,6 +106,6 @@ If a node receives an election message, it checks whether the node itself is not
 
 #### Assigning colors to nodes
 
-The master holds a list of all active nodes on the network. Every second, it goes over this list and assigns each node its corresponding color, so the required ration 2/3 green 1/3 red is met. It does it by incrementing a counter and calculating the remainder after it is divided by 3; numbers 0, 1 = green, and number 2 = red. The master node itself is always colored green. Assigning colors periodically also does a health check on each and every node on the network. If a node goes down, it is removed from the list of active nodes.
+The master holds a list of all active nodes on the network. Every second, it goes over this list and assigns each node its corresponding color, so the required ration 2/3 green 1/3 red is met. It does it by incrementing a counter and calculating the remainder after it is divided by 3; numbers 0, 1 = green, and number 2 = red. The master node itself is always colored green. Assigning colors periodically also does a health check on each and every node on the network. If a node goes down, it is removed from the list of active nodes and the rest is recolored if needed.
 
 <img src="images/07.png">
