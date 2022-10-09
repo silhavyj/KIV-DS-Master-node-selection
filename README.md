@@ -79,3 +79,11 @@ The view node works as an observer of the state of all the other nodes. Each nod
 <img src="images/03.png">
 
 ### Regular node
+
+#### When a node starts up
+
+When a node starts up, it will first start scanning the network looking for other nodes that might already be up and running. It is done by going over the entire range of ip addresses one by one. For each an every ip address, it attempts to call the `\greetings` API, which the nodes use to announce themselves. If another node is found, its ip address is stored into a list of known nodes on the network. It also fetches information on whether the node that was just discovered happens to be the master. Only one master is allowed to be on the network at all times. At the end of the scan, there can be three different outcomes. If no other nodes have been discovered, the node becomes the master. If a master was discovered during the process of scanning the network, it will start performing a health check on it (ping). If there are other nodes on the network but none of them is the master, it will engage the process of master election.
+
+#### Electing a new master
+
+#### Assigning colors to nodes
