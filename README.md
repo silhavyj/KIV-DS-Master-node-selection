@@ -2,6 +2,8 @@
  
 This project implements a **selection of a single master node** out of *N* nodes connected to a computer network. This problem was tackled using so-called **election algorithm** where every node can send a message to every other node.
 
+<img src="images/02.png">
+
 ## Running the application
 
 ### Requirements
