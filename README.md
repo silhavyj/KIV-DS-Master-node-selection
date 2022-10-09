@@ -88,8 +88,16 @@ When a node starts up, it will first start scanning the network looking for othe
 
 At the end of the scan, there can be three different outcomes. If no other nodes have been discovered, the node becomes the master. If a master was discovered during the process of scanning the network, it will start performing a health check on it (ping). If there are other nodes on the network but none of them is the master, it will engage the process of master election.
 
-**NOTE**: In order to speed up the process of scanning the network, the maximum number of ip addresses allowed to be scanned was reduces to 20 (starting from 176.0.1.1). This constrain can be modified in `/app/python/election.py` on line 11.
+**NOTE**: In order to speed up the process of scanning the network, the maximum number of ip addresses allowed to be scanned was reduces to 20 (starting from 176.0.1.1). This constrain can be modified in `app/python/election.py` on line 11.
 
 #### Electing a new master
+
+As mentioned previously, the nodes perform a regular ping on the master node. If a node finds out that the master node is not responding, it will start off the master election process.
+
+Usually, each node has a unique number which is considered to be its ID. In this implementation, the ID was substituted by the node's ip address (the higher the ip address, the higher the priority).
+
+When a node find out that the master is offline, it sends an election message (`POST /election`) to all its known nodes which have a higher ip address. If there are no other nodes with a higher ip address, the node itself becomes the new master and lets all its known nodes know about it through `POST /master-announcement`. If the node has sent an election message to all the other nodes that it was supposed to, it will await the new master announcement. 
+
+If a node receives an election message, it checks whether the node itself is not the new master and whether it has already sent an election message to all the other nodes. If none of this is true, it sends an election message to all its known nodes that happen to be assigned a higher ip address. If the nodes has already done its job, the election message will be discarded.
 
 #### Assigning colors to nodes
