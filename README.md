@@ -1,6 +1,8 @@
 # Distributed master node selection in a cluster
  
-This project implements a **selection of a single master node** out of *N* nodes connected to a computer network. This problem was tackled using so-called **election algorithm** where every node can send a message to every other node. The purpose of the master is to assign each node a color (red or green), so the ration of 1/3 red and 2/3 green is satisfied. The master itself is always colored green. When a node is not responding to the master, it is considered to be down and the master recolors the remaining nodes accordingly if needed. When the master node goes offline, the process of selecting a new one starts again.
+This project implements a **selection of a single master node** out of *N* nodes connected to a computer network. This problem was tackled using so-called **election algorithm** where every node can send a message to every other node.
+ 
+The purpose of the master is to assign each node a color (red or green), so the ration of 1/3 red and 2/3 green is satisfied. The master itself is always colored green. When a node is not responding to the master, it is considered to be down and the master recolors the remaining nodes accordingly if needed. When the master node goes offline, the process of selecting a new one starts again.
 
 <img src="images/01.png">
 
@@ -48,7 +50,24 @@ This will stop all the running containers this application consists of.
 
 ## Structure of the project
 
-Alongside the *N* nodes running on the network, there is also an extra node which helps visualize the states of individual nodes; their color and who is the master. It knows the ip addresses of the nodes as they were added into its configuration when creating a docker image (using Vagrant). The current state of all the nodes can be seen at http://localhost:8080/status.
+Alongside the *N* nodes running on the network, there is also an extra node which helps visualize the state of individual nodes; their color and who is the master. It knows the ip addresses of the nodes as they were added into its configuration when creating a docker image (using Vagrant). The current state of all the nodes can be seen at http://localhost:8080/status.
 
+<img src="images/02.png">
+
+The table columns represent the hostname, role (master/slave), ip address, and color. The master node is represented as a purple M. If there is a gray color assigned to a node, it means that it is in the process of scanning the network. Once the master is found, the node will be assigned its corresponding color.
 
 ## Interacting with the application
+
+The user can test the functionality of the system by shutting off some of the nodes and observing the system recovery. To halt a particular node, the user can use the following command.
+
+```
+vagrant halt node-6
+```
+
+To start the node up again, the following command can be used.
+
+```
+vagrant up node-6
+```
+
+## Implementation details
