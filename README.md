@@ -45,3 +45,6 @@ vagrant destroy -f
 ```
 
 This will stop all the running containers this application consists of.
+
+## Structure of the project
+
