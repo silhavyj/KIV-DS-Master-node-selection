@@ -71,3 +71,11 @@ vagrant up node-6
 ```
 
 ## Implementation details
+
+### View node
+
+The view node works as an observer of the state of all the other nodes. Each node has a public API `/node-details` which returns information regarding the node's current state. The results are then aggregated and presented to the user as a simple table that can bee accessed via http://localhost:8080/status.
+
+<img src="images/03.png">
+
+### Regular node
