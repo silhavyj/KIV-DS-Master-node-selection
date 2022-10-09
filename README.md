@@ -1,8 +1,8 @@
 # Distributed master node selection in a cluster
  
-This project implements a **selection of a single master node** out of *N* nodes connected to a computer network. This problem was tackled using so-called **election algorithm** where every node can send a message to every other node.
+This project implements a **selection of a single master node** out of *N* nodes connected to a computer network. This problem was tackled using so-called **election algorithm** where every node can send a message to every other node. The purpose of the master is to assign each node a color (red or green), so the ration of 1/3 red and 2/3 green is satisfied. The master itself is always colored green. When a node is not responding to the master, it is considered to be down and the master recolors the remaining nodes accordingly if needed. When the master node goes offline, the process of selecting a new one starts again.
 
-<img src="images/02.png">
+<img src="images/01.png">
 
 ## Running the application
 
@@ -28,8 +28,6 @@ This will automatically start all the containers that make up the project. It ha
 
 The user can verify that all nodes are up and running using the `docker ps` commands which lists out running containers.
 
-<img src="images/01.png">
-
 #### Changing up the number of nodes
 
 If the user wants to start the application with fewer or more nodes, they can do it by changing the following variable in the Vagrant file (line 31).
@@ -50,3 +48,7 @@ This will stop all the running containers this application consists of.
 
 ## Structure of the project
 
+Alongside the *N* nodes running on the network, there is also an extra node which helps visualize the states of individual nodes; their color and who is the master. It knows the ip addresses of the nodes as they were added into its configuration when creating a docker image (using Vagrant). The current state of all the nodes can be seen at http://localhost:8080/status.
+
+
+## Interacting with the application
