@@ -98,6 +98,10 @@ Usually, each node has a unique number which is considered to be its ID. In this
 
 When a node find out that the master is offline, it sends an election message (`POST /election`) to all its known nodes which have a higher ip address. If there are no other nodes with a higher ip address, the node itself becomes the new master and lets all its known nodes know about it through `POST /master-announcement`. If the node has sent an election message to all the other nodes that it was supposed to, it will await the new master announcement. 
 
+<img src="images/05.png">
+
 If a node receives an election message, it checks whether the node itself is not the new master and whether it has already sent an election message to all the other nodes. If none of this is true, it sends an election message to all its known nodes that happen to be assigned a higher ip address. If the nodes has already done its job, the election message will be discarded.
+
+<img src="images/06.png">
 
 #### Assigning colors to nodes
