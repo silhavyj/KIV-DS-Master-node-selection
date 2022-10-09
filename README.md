@@ -23,3 +23,25 @@ This will automatically start all the containers that make up the project. It ha
 ```
 
 **WARNING**: If you encounter any errors, try to terminate the process using `CTR+C` and running the `vagrant up` command again.
+
+The user can verify that all nodes are up and running using the `docker ps` commands which lists out running containers.
+
+<img src="images/01.png">
+
+#### Changing up the number of nodes
+
+If the user wants to start the application with fewer or more nodes, they can do it by changing the following variable in the Vagrant file (line 31).
+
+```
+NODES_COUNT = 6
+```
+
+### Clean up
+
+Once the user is done testing the application, they can clean everything up using the following command.
+
+```
+vagrant destroy -f
+```
+
+This will stop all the running containers this application consists of.
