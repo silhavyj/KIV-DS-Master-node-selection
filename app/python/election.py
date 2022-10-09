@@ -8,20 +8,6 @@ from logger import log
 from node import Node, GREEN, RED
 
 
-"""
-Discovers other nodes on the network. It goes ip address by
-ip address and tries to call the '/greetings' endpoint. If
-a status code of 200 is received, it stores the ip address into
-the list of known nodes. It also checks if one of the nodes
-is the master on the network. There are three possible outcomes
-at the end of this function. If no other nodes are discovered,
-this node becomes the master. If there are other nodes but no 
-master has been discovered, it engages the election process.
-And finally, if a master has been discovered, it'll start
-performing a periodic health check on it (ping). For the sake 
-of speeding up the whole process, the method only scans first 
-'max_nodes' ip addresses.
-"""
 def discover_nodes(node, max_nodes=20):
     log.info('Scanning the network')
 
@@ -84,15 +70,8 @@ def discover_nodes(node, max_nodes=20):
         init_new_master(node)
         
 
-"""
-This function performs the election process. It'll go over
-the known nodes and to those who have a higher ip address, it
-will send an election message. If there are no nodes with a higher
-ip address, this node then becomes the master. Otherwise, it'll
-wait for the new master to be announced.
-"""
 def init_new_master(node):
-    # Do not do anything if this node has been set to be the master.
+    # Do not do anything if this node has been set as the master.
     if node._is_master is True:
         return
     
@@ -136,11 +115,6 @@ def init_new_master(node):
         _announce_new_master(node)
 
 
-"""
-Performs a periodical health check on the master node.
-If the master is not responding, it's considered to be down
-and the process of election is kicked off.
-"""
 def ping_master(node):
     # Store the master's ip address locally (thread safety).
     master_ip_addr = node._master_ip_addr
@@ -170,8 +144,6 @@ def ping_master(node):
         init_new_master(node)
 
 
-"""
-"""
 def _announce_new_master(node):
     # We could've been selected as the master. If so, then do not do anything.
     if node._is_master is True:
@@ -183,9 +155,13 @@ def _announce_new_master(node):
     # Copy the list of known nodes (thread safety).
     nodes = node.get_nodes_copy()
 
+    # Go over all the known nodes
     for ip_addr in nodes:
         try:
             log.info(f'Announcing the new master to {ip_addr}')
+
+            # Send them a master announcement message. If a node
+            # seems to be down, remove it from the list.
             response = requests.post(f'http://{ip_addr}:{node._port}/master-announcement', verify=False, timeout=node._timeout)
             if response.status_code != 200:
                 log.warning(f'Node {ip_addr} seems to be down')
@@ -198,10 +174,10 @@ def _announce_new_master(node):
     _handle_clients(node)
 
 
-
-"""
-"""
 def _handle_clients(node):
+
+    # Returns a color by an index.
+    # 0, 1 - GREEN; 2 - RED
     def get_color(index):
         remainder = index % 3
         if remainder == 2:
@@ -209,11 +185,18 @@ def _handle_clients(node):
         return GREEN
 
     while True:
-        index = 1 # not 0 because the master is always green
+        # Starting index (not 0 because the master is always green).
+        index = 1
+        
+        # Copy of the list of known nodes (thread safety)
         nodes = node.get_nodes_copy()
     
+        # Go over all ip addresses (known nodes)
         for ip_addr in nodes:
             try:
+                # Assign the current node its corresponding color (based on the index).
+                # If the nodes seems to be down, do not increment the index and delete the ip
+                # address from the list of known nodes.
                 response = requests.post(f'http://{ip_addr}:{node._port}/color', json={'color' : get_color(index)}, verify=False, timeout=node._timeout)
                 if response.status_code != 200:
                     log.warning(f'Node {ip_addr} seems to be down')
@@ -224,4 +207,5 @@ def _handle_clients(node):
                 log.warning(f'Node {ip_addr} seems to be down')
                 node.remove_node(ip_addr)
 
+        # Sleep for 1s 
         time.sleep(1)
