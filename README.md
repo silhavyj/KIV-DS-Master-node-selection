@@ -106,4 +106,6 @@ If a node receives an election message, it checks whether the node itself is not
 
 #### Assigning colors to nodes
 
-The master holds a list of all active nodes on the network. Every second, it goes over this list and assigns each node its corresponding color, so the required ration 2/3 green 1/3 red is met. It does it by incrementing a counter and calculating the remainder after it is divided by 3; numbers 0, 1 = green, and number 2 = red. Assigning colors periodically also does a health check on each and every node on the network. If a node goes down, it is removed from the list of active nodes.
+The master holds a list of all active nodes on the network. Every second, it goes over this list and assigns each node its corresponding color, so the required ration 2/3 green 1/3 red is met. It does it by incrementing a counter and calculating the remainder after it is divided by 3; numbers 0, 1 = green, and number 2 = red. The master node itself is always colored green. Assigning colors periodically also does a health check on each and every node on the network. If a node goes down, it is removed from the list of active nodes.
+
+<img src="images/07.png">
